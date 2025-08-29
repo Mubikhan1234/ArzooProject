@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Box - Beautiful Home</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            /* Default background for creator/logged out */
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: #1f2937; /* Very dark gray for general text, almost black */
+        }
+        .container {
+            max-width: 90%;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .video-player-container {
+            width: 100%;
+            max-width: 700px; /* Max width for the video player */
+            margin: 2rem auto;
+            background-color: #1a202c; /* Dark background for video player */
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .video-player {
+            width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            display: block;
+        }
+        /* Styling for comments to look better */
+        .comment-item {
+            background-color: #f9fafb;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        .comment-author {
+            font-weight: 600;
+            color: #1f2937; /* Keep dark */
+        }
+        .comment-text {
+            color: #1f2937; /* Made darker */
+            margin-top: 0.25rem;
+        }
+        .comment-timestamp {
+            font-size: 0.75rem;
+            color: #4b5563; /* Keep dark enough */
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo-500 */
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+        /* New styles for video gallery layout */
+        .video-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .video-card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px -3px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            transition: transform 0.2s ease-in-out;
+        }
+        .video-card:hover {
+            transform: translateY(-5px);
+        }
+        .video-card-content {
+            padding: 1.5rem;
+        }
+        .video-card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937; /* Ensure title is very dark */
+            margin-bottom: 1rem;
+        }
+
+        /* User Theme Specific Styles */
+        .user-theme-body {
+            background-color: #e3f2fd; /* Lighter blue background */
+        }
+        .user-theme-header {
+            background-image: linear-gradient(to right, #00b0ff, #80d8ff); /* Lighter blue gradient */
+        }
+        .user-theme-main-container {
+            background-color: #ffffff; /* Keep white for content */
+            box-shadow: 0 8px 20px -2px rgba(0, 0, 0, 0.1), 0 3px 8px -1px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="antialiased" id="appBody">
+
+    <!-- Header Section -->
+    <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg p-5" id="appHeader">
+        <div class="container flex justify-between items-center">
+            <h1 class="text-3xl font-bold tracking-tight">Video Box 🎥</h1>
+            <nav>
+                <ul class="flex space-x-6 items-center">
+                    <li><a href="#" class="hover:text-blue-700 transition-colors duration-300 text-gray-900">Home</a></li>
+                    <li><a href="./creator_auth_page.html" class="hover:text-blue-700 transition-colors duration-300 text-gray-900">Creator</a></li>
+                    <li><a href="#" class="hover:text-blue-700 transition-colors duration-300 text-gray-900">My Videos</a></li>
+                    <li><a href="#" class="hover:text-blue-700 transition-colors duration-300 text-gray-900">Settings</a></li>
+                    <li>
+                        <button id="logoutButton" class="
+                            bg-red-500 hover:bg-red-600
+                            text-white font-semibold py-2 px-5 rounded-full
+                            shadow-md hover:shadow-lg
+                            transition-all duration-300 ease-in-out
+                        ">
+                            Logout
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Section -->
+    <main class="flex-grow py-12 px-4 md:px-8 lg:px-16">
+        <div class="container bg-white rounded-xl shadow-2xl p-8 md:p-12 text-center transform hover:scale-105 transition-transform duration-500 ease-in-out" id="mainContentContainer">
+            <!-- Conditional Greeting Section -->
+            <div id="userGreetingSection">
+                <h2 class="text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+                    Explore, Watch, Enjoy: <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-yellow-500">Your World of Videos.</span>
+                </h2>
+                <p class="text-xl text-gray-800 mb-10 max-w-2xl mx-auto">
+                    Dive into a curated collection of videos from talented creators, tailor-made for your entertainment.
+                </p>
+            </div>
+            <div id="creatorGreetingSection" class="hidden">
+                <h2 class="text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+                    Welcome Back, <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-green-500">Creator!</span>
+                </h2>
+                <p class="text-xl text-gray-800 mb-10 max-w-2xl mx-auto">
+                    Upload new videos, manage your content, and connect with your audience.
+                </p>
+            </div>
+
+
+            <!-- Video Upload Section (Creator-only) -->
+            <div id="uploadSection" class="bg-gradient-to-br from-indigo-100 to-blue-200 p-8 rounded-lg shadow-inner-lg border-2 border-indigo-300 transform hover:shadow-xl transition-all duration-300 ease-in-out hidden">
+                <h3 class="text-3xl font-semibold text-indigo-800 mb-6">Upload Your Video</h3>
+                <div class="flex flex-col items-center justify-center space-y-4">
+                    <!-- Hidden file input -->
+                    <input type="file" id="videoUploadInput" accept="video/*" class="hidden" />
+
+                    <!-- Custom styled upload button -->
+                    <label for="videoUploadInput" class="
+                        cursor-pointer
+                        bg-gradient-to-r from-green-500 to-blue-500
+                        hover:from-green-600 hover:to-blue-600
+                        text-white font-bold py-3 px-8 rounded-full
+                        shadow-lg hover:shadow-xl transform hover:-translate-y-1
+                        transition-all duration-300 ease-in-out
+                        flex items-center space-x-3
+                    ">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                        <span>Upload Video</span>
+                    </label>
+
+                    <p id="fileNameDisplay" class="text-gray-600 text-lg"></p>
+
+                    <!-- Video Quality Selection -->
+                    <div class="w-full max-w-sm">
+                        <label for="videoQualitySelect" class="block text-gray-700 text-sm font-semibold mb-2 text-left">
+                            Conversion Quality:
+                        </label>
+                        <select id="videoQualitySelect" class="input-field">
+                            <option value="auto">Auto (Standard Quality)</option>
+                            <option value="auto:best">Auto (Best Quality)</option>
+                            <option value="auto:good">Auto (Good Quality)</option>
+                            <option value="80">High (80%)</option>
+                            <option value="60">Medium (60%)</option>
+                            <option value="40">Low (40%)</option>
+                        </select>
+                    </div>
+
+                    <button id="submitUploadButton" class="
+                        mt-4
+                        bg-purple-600 hover:bg-purple-700
+                        text-white font-bold py-3 px-8 rounded-full
+                        shadow-md hover:shadow-lg
+                        transition-all duration-300 ease-in-out
+                        opacity-50 cursor-not-allowed
+                    " disabled>
+                        Submit Video
+                    </button>
+
+                    <!-- Message box for user feedback -->
+                    <div id="messageBox" class="mt-4 p-4 rounded-lg bg-blue-100 text-blue-800 hidden"></div>
+
+                    <p class="text-sm text-gray-500 mt-4">Max file size: 1GB. Supported formats: MP4, MOV, AVI, etc.</p>
+                </div>
+            </div>
+
+            <!-- Video Gallery Section (User-only) -->
+            <div id="videoGallerySection" class="mt-12 p-6 bg-gray-50 rounded-xl shadow-lg hidden">
+                <h3 id="galleryTitle" class="text-3xl font-semibold text-gray-800 mb-6">Explore Videos</h3>
+                <div id="videosContainer" class="video-gallery">
+                    <!-- Multiple video cards will be inserted here -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-gray-800 text-gray-300 py-6">
+        <div class="container text-center">
+            <p>&copy; 2025 Video Box. All rights reserved.</p>
+            <div class="flex justify-center space-x-6 mt-3">
+                <a href="#" class="hover:text-white transition-colors duration-300">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition-colors duration-300">Terms of Service</a>
+                <a href="#" class="hover:text-white transition-colors duration-300">Contact Us</a>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDocs, setDoc, updateDoc, arrayUnion, arrayRemove, increment, onSnapshot, collection, query, orderBy, where, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlrNVF-iKIPmUdQMiizs988DQvkzY0J38",
+            authDomain: "website-88bde.firebaseapp.com",
+            projectId: "website-88bde",
+            storageBucket: "website-88bde.firebasestorage.app",
+            messagingSenderId: "620074431058",
+            appId: "1:620074431058:web:a55f58b8feb4f6d7b8658b",
+            measurementId: "G-BDEG1RGBVN"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app); // Initialize Firestore
+
+        // --- Global Firestore Unsubscribe for the main gallery listener ---
+        let unsubscribeFromAllVideos = null;
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM Content Loaded.");
+            const appBody = document.getElementById('appBody');
+            const appHeader = document.getElementById('appHeader');
+            const mainContentContainer = document.getElementById('mainContentContainer');
+
+            const userGreetingSection = document.getElementById('userGreetingSection'); // New: User greeting container
+            const creatorGreetingSection = document.getElementById('creatorGreetingSection'); // New: Creator greeting container
+
+            const videoUploadInput = document.getElementById('videoUploadInput');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const videoQualitySelect = document.getElementById('videoQualitySelect');
+            const submitUploadButton = document.getElementById('submitUploadButton');
+            const messageBox = document.getElementById('messageBox');
+            const logoutButton = document.getElementById('logoutButton');
+            const galleryTitle = document.getElementById('galleryTitle');
+            
+            // UI sections for role-based display
+            const uploadSection = document.getElementById('uploadSection');
+            const videoGallerySection = document.getElementById('videoGallerySection'); // New container for all videos
+
+            const videosContainer = document.getElementById('videosContainer'); // Where video cards will be added dynamically
+
+            // Global state for current user and video
+            let currentUserId = null;
+            let currentUserEmail = "Guest";
+            let currentUserRole = 'user'; // Track current user's role
+
+
+            // Retrieve appId for Firestore path
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const VIDEOS_COLLECTION_PATH = `artifacts/${appId}/public/data/videos`;
+            const USER_ROLES_COLLECTION_PATH = `artifacts/${appId}/users`;
+
+            // Function to fetch user details (including username)
+            async function getUserDetails(userId) {
+                console.log(`Fetching user details for userId: ${userId}`);
+                try {
+                    const userRoleDocRef = doc(db, `${USER_ROLES_COLLECTION_PATH}/${userId}/user_roles`, userId);
+                    const docSnap = await getDoc(userRoleDocRef);
+                    if (docSnap.exists()) {
+                        console.log("User details fetched:", docSnap.data());
+                        return docSnap.data();
+                    }
+                    console.log("User details document does not exist for userId:", userId);
+                    return null;
+                } catch (error) {
+                    console.error("Error fetching user details:", error);
+                    return null;
+                }
+            }
+
+            // Function to apply theme based on role
+            function applyTheme(role) {
+                // Reset theme-related classes first
+                appBody.classList.remove('user-theme-body');
+                appHeader.classList.remove('user-theme-header', 'from-blue-600', 'to-purple-600');
+                appHeader.classList.add('from-blue-600', 'to-purple-600'); // Re-add default gradient
+                mainContentContainer.classList.remove('user-theme-main-container');
+
+                // Toggle visibility of greeting sections
+                if (userGreetingSection) {
+                    userGreetingSection.classList.add('hidden');
+                }
+                if (creatorGreetingSection) {
+                    creatorGreetingSection.classList.add('hidden');
+                }
+
+
+                if (role === 'user' || role === 'guest') {
+                    appBody.classList.add('user-theme-body');
+                    appHeader.classList.remove('from-blue-600', 'to-purple-600'); // Remove default gradient
+                    appHeader.classList.add('user-theme-header'); // Add user theme gradient
+                    mainContentContainer.classList.add('user-theme-main-container');
+                    if (userGreetingSection) userGreetingSection.classList.remove('hidden'); // Show user greeting
+                    console.log("User theme and greeting applied.");
+                } else if (role === 'creator') {
+                    if (creatorGreetingSection) creatorGreetingSection.classList.remove('hidden'); // Show creator greeting
+                    console.log("Creator/Default theme and greeting applied.");
+                    // Default classes are already present or re-added, so no additional theme classes are applied here
+                } else {
+                     // Fallback for roles not explicitly handled, show user greeting and default theme
+                    if (userGreetingSection) userGreetingSection.classList.remove('hidden');
+                    console.log("Fallback: User greeting and default theme applied.");
+                }
+            }
+
+
+            // Function to adjust UI based on user role
+            async function adjustUIForUserRole(userId) {
+                console.log(`Adjusting UI for user role. Current userId: ${userId}`);
+                if (!userId) {
+                    uploadSection.classList.add('hidden');
+                    videoGallerySection.classList.add('hidden');
+                    if (unsubscribeFromAllVideos) {
+                        unsubscribeFromAllVideos();
+                        unsubscribeFromAllVideos = null;
+                        console.log("Unsubscribed from all videos due to no user.");
+                    }
+                    applyTheme('guest'); // Apply default theme for logged out (guest)
+                    return;
+                }
+
+                try {
+                    const userDetails = await getUserDetails(userId);
+                    currentUserRole = userDetails ? userDetails.role : 'user';
+                    console.log(`User role determined: ${currentUserRole}`);
+                    applyTheme(currentUserRole); // Apply theme and greeting based on detected role
+
+                    if (currentUserRole === 'creator') {
+                        uploadSection.classList.remove('hidden');
+                        videoGallerySection.classList.remove('hidden');
+                        galleryTitle.textContent = "Your Uploaded Videos";
+                        
+                        if (unsubscribeFromAllVideos) {
+                            unsubscribeFromAllVideos();
+                            unsubscribeFromAllVideos = null;
+                            console.log("Unsubscribed from previous all videos listener (creator login).");
+                        }
+                        await loadAllVideosForGallery(currentUserId);
+                        console.log("UI adjusted for Creator. Loading creator-specific videos.");
+                    } else {
+                        uploadSection.classList.add('hidden');
+                        videoGallerySection.classList.remove('hidden');
+                        galleryTitle.textContent = "Explore Videos";
+                        console.log("UI adjusted for User. Loading all public videos.");
+                        await loadAllVideosForGallery(null);
+                    }
+                } catch (error) {
+                    console.error("Error in adjustUIForUserRole:", error);
+                    showMessage(`Error loading user role: ${error.message}`, 'error');
+                    uploadSection.classList.add('hidden');
+                    videoGallerySection.classList.remove('hidden');
+                    galleryTitle.textContent = "Explore Videos";
+                    await loadAllVideosForGallery(null);
+                    applyTheme('guest'); // Fallback theme and greeting on error
+                }
+            }
+
+
+            // --- Firebase Auth State Listener ---
+            let isRedirectingToAuthPage = sessionStorage.getItem('isRedirectingToAuthPage') === 'true';
+
+            onAuthStateChanged(auth, async (user) => {
+                console.log("onAuthStateChanged fired. User:", user ? user.uid : "null");
+
+                if (user) {
+                    currentUserId = user.uid;
+                    currentUserEmail = user.email;
+                    logoutButton.style.display = 'inline-flex';
+                    console.log("User is logged in:", currentUserEmail, "UID:", currentUserId);
+                    await adjustUIForUserRole(currentUserId);
+                    sessionStorage.removeItem('isRedirectingToAuthPage');
+                } else {
+                    if (!isRedirectingToAuthPage) {
+                        currentUserId = null;
+                        currentUserEmail = "Guest";
+                        currentUserRole = 'user';
+                        logoutButton.style.display = 'none';
+                        
+                        videosContainer.innerHTML = ''; 
+                        if (unsubscribeFromAllVideos) {
+                            unsubscribeFromAllVideos();
+                            unsubscribeFromAllVideos = null;
+                            console.log("Unsubscribed from all videos listener (user logged out).");
+                        }
+
+                        console.log("User is logged out. Redirecting to creator_auth_page.html");
+                        sessionStorage.setItem('isRedirectingToAuthPage', 'true');
+                        window.location.href = './creator_auth_page.html';
+                        return;
+                    }
+                }
+            });
+
+            // --- Logout Functionality ---
+            logoutButton.addEventListener('click', async () => {
+                try {
+                    console.log("Logout button clicked.");
+                    sessionStorage.setItem('isRedirectingToAuthPage', 'true');
+                    await signOut(auth);
+                } catch (error) {
+                    console.error("Error logging out:", error.message);
+                    showMessage(`Error logging out: ${error.message}`, 'error');
+                }
+            });
+
+            // --- Cloudinary Upload and Firestore Save ---
+            videoUploadInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    fileNameDisplay.textContent = `Selected file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    submitUploadButton.disabled = false;
+                    submitUploadButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    submitUploadButton.classList.add('hover:bg-purple-700');
+                    showMessage(`File '${file.name}' selected. Ready to upload!`, 'info');
+                } else {
+                    fileNameDisplay.textContent = '';
+                    submitUploadButton.disabled = true;
+                    submitUploadButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    submitUploadButton.classList.remove('hover:bg-purple-700');
+                    showMessage('No file selected.', 'warning');
+                }
+            });
+
+            submitUploadButton.addEventListener('click', async () => {
+                if (!currentUserId) {
+                    showMessage('Please log in to upload videos.', 'error');
+                    return;
+                }
+
+                const file = videoUploadInput.files[0];
+                if (file) {
+                    showMessage('Initiating upload to Cloudinary...', 'info');
+                    const CLOUDINARY_CLOUD_NAME = 'dggc6j9fa';
+                    const CLOUDINARY_UPLOAD_PRESET = 'video_box_uploads';
+                    const selectedQuality = videoQualitySelect.value;
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+                    formData.append('quality', selectedQuality);
+
+                    try {
+                        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        if (data.secure_url) {
+                            console.log('Cloudinary upload successful. Saving to Firestore:', data.secure_url);
+
+                            const userDetails = await getUserDetails(currentUserId);
+                            const creatorDisplayName = userDetails ? (userDetails.username || userDetails.email) : currentUserEmail;
+
+                            const videosCollectionRef = collection(db, VIDEOS_COLLECTION_PATH);
+                            await addDoc(videosCollectionRef, {
+                                videoUrl: data.secure_url,
+                                creatorId: currentUserId,
+                                creatorEmail: currentUserEmail,
+                                creatorDisplayName: creatorDisplayName,
+                                timestamp: new Date(),
+                                likes: 0,
+                                likedBy: [],
+                                comments: [],
+                                conversionQuality: selectedQuality
+                            });
+
+                            showMessage('Video uploaded successfully!', 'success');
+                            console.log("Video data saved to Firestore.");
+                            
+                            videoUploadInput.value = '';
+                            fileNameDisplay.textContent = '';
+                            submitUploadButton.disabled = true;
+                            submitUploadButton.classList.add('opacity-50', 'cursor-not-allowed');
+                            submitUploadButton.classList.remove('hover:bg-purple-700');
+                            
+                        } else {
+                            // Cloudinary specifically failed, display their error message
+                            const cloudinaryError = data.error ? data.error.message : 'Unknown Cloudinary error.';
+                            showMessage(`Upload failed: ${cloudinaryError}`, 'error');
+                            console.error('Cloudinary upload failed:', data);
+                        }
+                    } catch (error) {
+                        // Generic network or fetch error
+                        showMessage('Error during upload: Check your network or Cloudinary configuration.', 'error');
+                        console.error('Upload Error:', error);
+                    }
+                } else {
+                    showMessage('Please select a video file first!', 'error');
+                }
+            });
+
+            function renderVideoCard(videoDoc) {
+                const videoId = videoDoc.id;
+                const videoData = videoDoc.data();
+                const videoUrl = videoData.videoUrl;
+                const likes = videoData.likes || 0;
+                const likedBy = videoData.likedBy || [];
+                const comments = videoData.comments || [];
+                const creatorDisplayName = videoData.creatorDisplayName || videoData.creatorEmail || 'Anonymous';
+                const uploadDate = videoData.timestamp ? new Date(videoData.timestamp.toDate()).toLocaleString() : 'N/A';
+
+                console.log(`Attempting to render video card for ID: ${videoId}, Creator: ${creatorDisplayName}, URL: ${videoUrl}`);
+
+                const videoCard = document.createElement('div');
+                videoCard.id = `video-card-${videoId}`;
+                videoCard.classList.add('video-card');
+
+                // Always display the creator's name for all users
+                const creatorLineHtml = `<h4 class="video-card-title">Uploaded by ${creatorDisplayName}</h4>`;
+
+
+                videoCard.innerHTML = `
+                    <div class="video-player-container !my-0 !shadow-none !rounded-none">
+                        <video src="${videoUrl}" controls autoplay loop class="video-player"></video>
+                    </div>
+                    <div class="video-card-content">
+                        ${creatorLineHtml}
+                        <p class="text-sm text-gray-500 mb-4">Uploaded on: ${uploadDate}</p>
+                        <p id="videoLinkDisplay-${videoId}" class="text-blue-600 hover:underline mt-4 cursor-pointer"></p>
+                        <button id="copyVideoLinkButton-${videoId}" class="
+                            mt-2
+                            bg-gray-200 hover:bg-gray-300
+                            text-gray-800 font-semibold py-1 px-4 rounded-full text-sm
+                            shadow-sm hover:shadow-md
+                            transition-all duration-300 ease-in-out
+                        ">
+                            Copy Video Link and SHARE
+                        </button>
+
+                        <div class="flex items-center space-x-4 mt-6 mb-4">
+                            <button id="likeButton-${videoId}" class="
+                                flex items-center space-x-1 px-3 py-1 rounded-full text-sm
+                                bg-blue-500 hover:bg-blue-600 text-white font-medium
+                                transition-colors duration-200 shadow-md
+                            ">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Like</span>
+                            </button>
+                            <span id="likeCount-${videoId}" class="text-gray-700 font-semibold text-base">${likes} Likes</span>
+                        </div>
+
+                        <div class="mt-4">
+                            <h5 class="text-lg font-semibold text-gray-800 mb-2 text-left">Comments</h5>
+                            <div class="flex space-x-2 mb-3">
+                                <input type="text" id="commentInput-${videoId}" placeholder="Add a comment..." class="flex-grow input-field mb-0 text-sm">
+                                <button id="postCommentButton-${videoId}" class="
+                                    bg-purple-500 hover:bg-purple-600 text-white font-medium
+                                    px-4 py-1 rounded-full text-sm transition-colors duration-200 shadow-md
+                                ">
+                                    Post
+                                </button>
+                            </div>
+                            <div id="commentsList-${videoId}" class="space-y-2 text-left text-sm">
+                                <!-- Comments will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+                videosContainer.appendChild(videoCard);
+
+                // Update link display
+                document.getElementById(`videoLinkDisplay-${videoId}`).textContent = videoUrl;
+                document.getElementById(`videoLinkDisplay-${videoId}`).href = videoUrl;
+
+                // Set initial like button state
+                const likeButton = document.getElementById(`likeButton-${videoId}`);
+                const likeSpan = likeButton.querySelector('span');
+                if (currentUserId && likedBy.includes(currentUserId)) {
+                    likeButton.classList.remove('bg-blue-500');
+                    likeButton.classList.add('bg-pink-500');
+                    likeSpan.textContent = 'Liked';
+                } else {
+                    likeButton.classList.remove('bg-pink-500');
+                    likeButton.classList.add('bg-blue-500');
+                    likeSpan.textContent = 'Like';
+                }
+
+                // Add event listeners for interaction
+                document.getElementById(`copyVideoLinkButton-${videoId}`).addEventListener('click', () => {
+                    navigator.clipboard.writeText(videoUrl)
+                        .then(() => showMessage('Video link copied to clipboard!', 'info'))
+                        .catch(err => {
+                            const tempInput = document.createElement('textarea');
+                            tempInput.value = videoUrl;
+                            document.body.appendChild(tempInput);
+                            tempInput.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tempInput);
+                            showMessage('Video link copied to clipboard! (Fallback method)', 'info');
+                            console.error('Could not use navigator.clipboard, used fallback:', err);
+                        });
+                });
+                
+                document.getElementById(`likeButton-${videoId}`).addEventListener('click', async () => {
+                    if (!currentUserId) { showMessage('Please log in to like videos.', 'error'); return; }
+                    const videoDocRef = doc(db, VIDEOS_COLLECTION_PATH, videoId);
+                    try {
+                        const docSnap = await getDoc(videoDocRef);
+                        if (docSnap.exists()) {
+                            const currentVideoData = docSnap.data();
+                            const currentLikedBy = currentVideoData.likedBy || [];
+                            if (currentLikedBy.includes(currentUserId)) {
+                                await updateDoc(videoDocRef, { likes: increment(-1), likedBy: arrayRemove(currentUserId) });
+                                showMessage('Video unliked!', 'info');
+                            } else {
+                                await updateDoc(videoDocRef, { likes: increment(1), likedBy: arrayUnion(currentUserId) });
+                                showMessage('Video liked!', 'success');
+                            }
+                        }
+                    } catch (error) { console.error("Error toggling like:", error); showMessage(`Error processing like: ${error.message}`, 'error'); }
+                });
+
+                document.getElementById(`postCommentButton-${videoId}`).addEventListener('click', async () => {
+                    if (!currentUserId) { showMessage('Please log in to post comments.', 'error'); return; }
+                    const commentInput = document.getElementById(`commentInput-${videoId}`);
+                    const commentText = commentInput.value.trim();
+                    if (commentText) {
+                        const videoDocRef = doc(db, VIDEOS_COLLECTION_PATH, videoId);
+                        try {
+                            const newComment = { userId: currentUserId, userEmail: currentUserEmail, text: commentText, timestamp: new Date() };
+                            await updateDoc(videoDocRef, { comments: arrayUnion(newComment) });
+                            commentInput.value = '';
+                            showMessage('Comment posted!', 'success');
+                        } catch (error) { console.error("Error posting comment:", error); showMessage(`Error posting comment: ${error.message}`, 'error'); }
+                    } else { showMessage('Comment cannot be empty.', 'warning'); }
+                });
+
+                // Render comments for this specific video
+                const commentsListElement = document.getElementById(`commentsList-${videoId}`);
+                commentsListElement.innerHTML = '';
+                if (comments.length > 0) {
+                    comments.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+                    comments.forEach(comment => {
+                        const commentElement = document.createElement('div');
+                        commentElement.classList.add('comment-item');
+                        const commentDate = comment.timestamp ? new Date(comment.timestamp.toDate()).toLocaleString() : 'N/A';
+                        commentElement.innerHTML = `
+                            <p class="comment-author">${comment.userEmail || 'Anonymous'}</p>
+                            <p class="comment-text">${comment.text}</p>
+                            <p class="comment-timestamp">${commentDate}</p>
+                        `;
+                        commentsListElement.appendChild(commentElement);
+                    });
+                } else {
+                    commentsListElement.innerHTML = '<p class="text-gray-500 text-sm">No comments yet. Be the first!</p>';
+                }
+            }
+
+
+            // --- Load all videos from Firestore for the gallery ---
+            // Accepts optional `creatorId` to filter videos
+            async function loadAllVideosForGallery(filterCreatorId = null) {
+                console.log(`[loadAllVideosForGallery] Called with filterCreatorId: ${filterCreatorId}`);
+                if (unsubscribeFromAllVideos) {
+                    unsubscribeFromAllVideos();
+                    unsubscribeFromAllVideos = null;
+                    console.log("[loadAllVideosForGallery] Unsubscribed from previous all videos listener.");
+                }
+
+                try {
+                    const videosCollectionRef = collection(db, VIDEOS_COLLECTION_PATH);
+                    let videoQuery;
+
+                    if (filterCreatorId) {
+                        // Query for creators: filter by creatorId, no sorting here to avoid composite index error
+                        videoQuery = query(videosCollectionRef, where('creatorId', '==', filterCreatorId));
+                        console.log(`[loadAllVideosForGallery] Constructing simplified query: where creatorId == ${filterCreatorId} (no sorting for creator)`);
+                    } else {
+                        // Query for general users: show all videos, sorted by timestamp
+                        videoQuery = query(videosCollectionRef, orderBy('timestamp', 'desc'));
+                        console.log("[loadAllVideosForGallery] Constructing query: orderBy timestamp desc (all videos).");
+                    }
+                    
+                    unsubscribeFromAllVideos = onSnapshot(videoQuery, (querySnapshot) => {
+                        console.log(`[onSnapshot] Firestore snapshot received. Number of documents: ${querySnapshot.docs.length}.`);
+                        
+                        videosContainer.innerHTML = ''; // Clear for a full re-render
+
+                        if (!querySnapshot.empty) {
+                            querySnapshot.forEach(doc => {
+                                console.log(`[onSnapshot] Processing document: ${doc.id}`);
+                                renderVideoCard(doc);
+                            });
+                            console.log("[onSnapshot] All videos rendered for gallery.");
+                            videoGallerySection.classList.remove('hidden');
+                        } else {
+                            console.log("[onSnapshot] No videos found matching the query.");
+                            videosContainer.innerHTML = '<p class="text-gray-500 text-lg">No videos to display yet. Upload one or check back later!</p>';
+                            videoGallerySection.classList.remove('hidden');
+                        }
+                    }, (error) => {
+                        console.error("[onSnapshot ERROR] Firestore listening error:", error);
+                        showMessage(`Error loading videos: ${error.message}`, 'error');
+                        videosContainer.innerHTML = '<p class="text-red-500 text-lg">Error loading videos. Please try again.</p>';
+                        videoGallerySection.classList.remove('hidden');
+                    });
+
+                } catch (error) {
+                    console.error("[loadAllVideosForGallery ERROR] Error initiating videos gallery load:", error);
+                    showMessage(`Error initializing video gallery: ${error.message}`, 'error');
+                    videoGallerySection.classList.add('hidden');
+                }
+            }
+
+
+            function showMessage(message, type) {
+                messageBox.textContent = message;
+                messageBox.classList.remove('hidden', 'bg-blue-100', 'text-blue-800', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800');
+                if (type === 'info') {
+                    messageBox.classList.add('bg-blue-100', 'text-blue-800');
+                } else if (type === 'success') {
+                    messageBox.classList.add('bg-green-100', 'text-green-800');
+                } else if (type === 'error') {
+                    messageBox.classList.add('bg-red-100', 'text-red-800');
+                } else if (type === 'warning') {
+                    messageBox.classList.add('bg-yellow-100', 'text-yellow-800');
+                }
+                messageBox.classList.remove('hidden');
+
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

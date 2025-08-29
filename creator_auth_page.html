@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Box - Creator Login</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .auth-container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo-500 */
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="auth-container">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-6">Video Box 🎬</h1>
+        <p class="text-gray-600 mb-8">Sign in or create a new account.</p>
+
+        <div id="messageBox" class="p-3 rounded-lg text-sm mb-4 hidden" role="alert"></div>
+
+        <form id="authForm" class="space-y-4">
+            <div id="usernameField" class="hidden"> <!-- Username field, initially hidden -->
+                <input type="text" id="username" placeholder="Username" class="input-field">
+            </div>
+            <div>
+                <input type="email" id="email" placeholder="Email Address" required class="input-field">
+            </div>
+            <div>
+                <input type="password" id="password" placeholder="Password" required class="input-field">
+            </div>
+            <div id="roleSelection" class="hidden">
+                <label for="role" class="block text-left text-gray-700 text-sm font-medium mb-2">Select Your Role:</label>
+                <select id="role" class="input-field">
+                    <option value="user">User</option>
+                    <option value="creator">Creator</option>
+                </select>
+            </div>
+            <button type="submit" id="submitAuthButton" class="
+                w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg
+                focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50
+                transition-all duration-300 ease-in-out shadow-md hover:shadow-lg
+            ">
+                Login
+            </button>
+        </form>
+
+        <div class="mt-6">
+            <button id="toggleAuthMode" class="
+                text-indigo-600 hover:text-indigo-800 font-medium
+                transition-colors duration-300 ease-in-out
+            ">
+                Don't have an account? Sign Up
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your Firebase configuration (copy from homepage_video_upload.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlrNVF-iKIPmUdQMiizs988DQvkzY0J38",
+            authDomain: "website-88bde.firebaseapp.com",
+            projectId: "website-88bde",
+            storageBucket: "website-88bde.firebasestorage.app",
+            messagingSenderId: "620074431058",
+            appId: "1:620074431058:web:a55f58b8feb4f6d7b8658b",
+            measurementId: "G-BDEG1RGBVN"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Retrieve appId for Firestore path
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const USER_ROLES_COLLECTION_PATH = `artifacts/${appId}/users`;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const usernameInput = document.getElementById('username'); // New: Username input
+            const usernameField = document.getElementById('usernameField'); // New: Container for username field
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const roleSelection = document.getElementById('roleSelection');
+            const roleSelect = document.getElementById('role');
+            const submitAuthButton = document.getElementById('submitAuthButton');
+            const toggleAuthModeButton = document.getElementById('toggleAuthMode');
+            const messageBox = document.getElementById('messageBox');
+
+            let isLoginMode = true; // True for login, false for sign up
+
+            // --- Initial Firebase sign-in ---
+            // On the login/signup page, we only need to sign in with a custom token
+            // if provided by the Canvas environment, otherwise, we wait for user credentials.
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                    console.log("Signed in with custom token provided by Canvas.");
+                    // If a user is already signed in via custom token, they might be authenticated.
+                    // However, for this auth page, we expect an explicit email/password action.
+                    // No further action on this page is taken for custom token sign-in.
+                } else {
+                    console.log("No custom token provided or custom token not explicitly handled here. Awaiting user login/signup.");
+                }
+            } catch (error) {
+                console.error("Error during initial Firebase custom token sign-in:", error);
+                // Displaying a message here might be confusing if user is meant to log in manually.
+                // Keeping it silent or a console log might be better.
+                // showMessage(`Error during initial setup: ${error.message}`, 'error');
+            }
+
+
+            // Function to update UI based on auth mode (login/signup)
+            function updateAuthModeUI() {
+                if (isLoginMode) {
+                    submitAuthButton.textContent = 'Login';
+                    toggleAuthModeButton.textContent = "Don't have an account? Sign Up";
+                    roleSelection.classList.add('hidden');
+                    usernameField.classList.add('hidden'); // Hide username field in login mode
+                    usernameInput.removeAttribute('required'); // Remove required attribute for username
+                } else {
+                    submitAuthButton.textContent = 'Sign Up';
+                    toggleAuthModeButton.textContent = "Already have an account? Login";
+                    roleSelection.classList.remove('hidden');
+                    usernameField.classList.remove('hidden'); // Show username field in signup mode
+                    usernameInput.setAttribute('required', 'true'); // Make username required for signup
+                }
+            }
+
+            // Toggle between login and sign-up modes
+            toggleAuthModeButton.addEventListener('click', () => {
+                isLoginMode = !isLoginMode;
+                updateAuthModeUI();
+            });
+
+            // Handle form submission
+            document.getElementById('authForm').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const email = emailInput.value;
+                const password = passwordInput.value;
+                let username = '';
+
+                if (!isLoginMode) {
+                    username = usernameInput.value.trim();
+                    if (!username) {
+                        showMessage('Please enter a username.', 'warning');
+                        return;
+                    }
+                }
+
+                try {
+                    let userCredential;
+                    let userRole = '';
+
+                    if (isLoginMode) {
+                        userCredential = await signInWithEmailAndPassword(auth, email, password);
+                        console.log("User logged in:", userCredential.user.uid);
+                        showMessage('Login successful!', 'success');
+                    } else {
+                        userRole = roleSelect.value;
+                        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        console.log("User signed up:", userCredential.user.uid);
+
+                        // Save role AND username to Firestore immediately after signup
+                        const userRoleDocRef = doc(db, `${USER_ROLES_COLLECTION_PATH}/${userCredential.user.uid}/user_roles`, userCredential.user.uid);
+                        await setDoc(userRoleDocRef, {
+                            userId: userCredential.user.uid,
+                            email: email,
+                            username: username, // Save the username
+                            role: userRole
+                        });
+                        showMessage('Sign up successful! Role and username saved.', 'success');
+                    }
+                    
+                    // Redirect to home page (index.html) after successful login/signup
+                    window.location.href = './index.html'; 
+
+                } catch (error) {
+                    let errorMessage = 'An unknown error occurred.';
+                    console.error("Authentication error:", error.code, error.message);
+                    switch (error.code) {
+                        case 'auth/email-already-in-use':
+                            errorMessage = 'This email is already in use. Try logging in or use a different email.';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'The email address is not valid.';
+                            break;
+                        case 'auth/operation-not-allowed':
+                            errorMessage = 'Email/password accounts are not enabled. Please enable in Firebase Auth settings.';
+                            break;
+                        case 'auth/weak-password':
+                            errorMessage = 'The password is too weak. Please use at least 6 characters.';
+                            break;
+                        case 'auth/user-not-found':
+                        case 'auth/wrong-password':
+                            errorMessage = 'Invalid email or password.';
+                            break;
+                        default:
+                            errorMessage = `Authentication failed: ${error.message}`;
+                    }
+                    showMessage(errorMessage, 'error');
+                }
+            });
+
+            // Helper function to display messages
+            function showMessage(message, type) {
+                messageBox.textContent = message;
+                messageBox.classList.remove('hidden', 'bg-blue-100', 'text-blue-800', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800');
+                if (type === 'info') {
+                    messageBox.classList.add('bg-blue-100', 'text-blue-800');
+                } else if (type === 'success') {
+                    messageBox.classList.add('bg-green-100', 'text-green-800');
+                } else if (type === 'error') {
+                    messageBox.classList.add('bg-red-100', 'text-red-800');
+                } else if (type === 'warning') {
+                    messageBox.classList.add('bg-yellow-100', 'text-yellow-800');
+                }
+                messageBox.classList.remove('hidden');
+
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 5000);
+            }
+
+            // Initial UI setup
+            updateAuthModeUI();
+        });
+    </script>
+</body>
+</html>
